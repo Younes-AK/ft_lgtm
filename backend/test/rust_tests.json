@@ -1,0 +1,43 @@
+
+[
+  {
+    "test": "filesystem_access",
+    "language": "rust",
+    "code": "use std::fs;\nfn main() {\n    let paths = [\"/etc/shadow\", \"/root/.ssh/id_rsa\", \"/proc/1/environ\", \"/etc/passwd\", \"/root\", \"/var/run/docker.sock\"];\n    for path in paths {\n        match fs::read(path) {\n            Ok(_) => println!(\"VULNERABLE: {}\", path),\n            Err(e) => println!(\"BLOCKED: {} {:?}\", path, e.kind()),\n        }\n    }\n}"
+  },
+  {
+    "test": "environment_variables",
+    "language": "rust",
+    "code": "use std::env;\nfn main() {\n    let vars: Vec<_> = env::vars().collect();\n    println!(\"ENV_COUNT: {}\", vars.len());\n    for (key, _) in vars {\n        println!(\"EXPOSED VARIABLE: {}\", key);\n    }\n    println!(\"CANARY_EXISTS: {}\", env::var(\"SANDBOX_CANARY_SECRET\").is_ok());\n}"
+  },
+  {
+    "test": "network_access",
+    "language": "rust",
+    "code": "use std::net::TcpStream;\nuse std::time::Duration;\nfn main() {\n    match TcpStream::connect_timeout(&\"1.1.1.1:53\".parse().unwrap(), Duration::from_secs(3)) {\n        Ok(_) => println!(\"VULNERABLE: network access allowed\"),\n        Err(e) => println!(\"BLOCKED: {:?} {}\", e.kind(), e),\n    }\n}"
+  },
+  {
+    "test": "cpu_exhaustion",
+    "language": "rust",
+    "code": "fn main() {\n    loop {\n        std::hint::spin_loop();\n    }\n}"
+  },
+  {
+    "test": "memory_exhaustion",
+    "language": "rust",
+    "code": "fn main() {\n    let mut data: Vec<Vec<u8>> = Vec::new();\n    loop {\n        let chunk = vec![0u8; 1024 * 1024];\n        data.push(chunk);\n    }\n}"
+  },
+  {
+    "test": "process_creation",
+    "language": "rust",
+    "code": "use std::process::Command;\nfn main() {\n    match Command::new(\"/bin/echo\").arg(\"child process\").status() {\n        Ok(_) => println!(\"VULNERABLE: process creation allowed\"),\n        Err(e) => println!(\"BLOCKED: {:?} {}\", e.kind(), e),\n    }\n}"
+  },
+  {
+    "test": "docker_kubernetes_access",
+    "language": "rust",
+    "code": "use std::path::Path;\nfn main() {\n    let paths = [\"/var/run/docker.sock\", \"/root/.kube/config\", \"/home/user/.kube/config\", \"/var/run/secrets/kubernetes.io/serviceaccount/token\", \"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\"];\n    for path in paths {\n        println!(\"{}: {}\", path, if Path::new(path).exists() { \"EXISTS\" } else { \"NOT ACCESSIBLE\" });\n    }\n}"
+  },
+  {
+    "test": "cross_execution_isolation",
+    "language": "rust",
+    "code": "use std::fs;\nfn main() {\n    let path = \"/tmp/cross-job-canary\";\n    match fs::read_to_string(path) {\n        Ok(content) => println!(\"VULNERABLE: shared file accessible: {}\", content),\n        Err(_) => println!(\"ISOLATED: file unavailable\"),\n    }\n}"
+  }
+]

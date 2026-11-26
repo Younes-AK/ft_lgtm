@@ -1,0 +1,43 @@
+
+[
+  {
+    "test": "filesystem_access",
+    "language": "python",
+    "code": "import os\npaths = ['/etc/shadow', '/root/.ssh/id_rsa', '/proc/1/environ', '/etc/passwd', '/root', '/var/run/docker.sock']\nfor p in paths:\n    try:\n        with open(p, 'r') as f:\n            print('VULNERABLE:', p)\n    except Exception as e:\n        print('BLOCKED:', p, type(e).__name__)"
+  },
+  {
+    "test": "environment_variables",
+    "language": "python",
+    "code": "import os\nprint('ENV_COUNT:', len(os.environ))\nfor key in os.environ:\n    print('EXPOSED VARIABLE:', key)\nprint('CANARY_EXISTS:', 'SANDBOX_CANARY_SECRET' in os.environ)"
+  },
+  {
+    "test": "network_access",
+    "language": "python",
+    "code": "import socket\ntry:\n    s = socket.create_connection(('1.1.1.1', 53), timeout=3)\n    print('VULNERABLE: network access allowed')\n    s.close()\nexcept Exception as e:\n    print('BLOCKED:', type(e).__name__, str(e))"
+  },
+  {
+    "test": "cpu_exhaustion",
+    "language": "python",
+    "code": "while True:\n    pass"
+  },
+  {
+    "test": "memory_exhaustion",
+    "language": "python",
+    "code": "data = []\nwhile True:\n    data.append(bytearray(1024 * 1024))"
+  },
+  {
+    "test": "process_creation",
+    "language": "python",
+    "code": "import subprocess\ntry:\n    p = subprocess.Popen(['/bin/echo', 'child process'])\n    p.wait()\n    print('VULNERABLE: process creation allowed')\nexcept Exception as e:\n    print('BLOCKED:', type(e).__name__, str(e))"
+  },
+  {
+    "test": "docker_kubernetes_access",
+    "language": "python",
+    "code": "import os\npaths = ['/var/run/docker.sock', '/root/.kube/config', '/home/user/.kube/config', '/var/run/secrets/kubernetes.io/serviceaccount/token', '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt']\nfor p in paths:\n    print(p, 'EXISTS' if os.path.exists(p) else 'NOT ACCESSIBLE')"
+  },
+  {
+    "test": "cross_execution_isolation",
+    "language": "python",
+    "code": "path = '/tmp/cross-job-canary'\ntry:\n    with open(path, 'r') as f:\n        print('VULNERABLE: shared file accessible:', f.read())\nexcept Exception:\n    print('ISOLATED: file unavailable')"
+  }
+]

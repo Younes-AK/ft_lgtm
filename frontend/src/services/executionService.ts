@@ -1,10 +1,8 @@
-export type Language = 'javascript' | 'python' | 'cpp' | 'rust'
+export type Language = 'python' | 'rust'
 
 export type RunRequest = {
   language: Language
   source: string
-  input: string
-  filename: string
 }
 
 export type RunResult = {
@@ -14,21 +12,13 @@ export type RunResult = {
   durationMs?: number
 }
 
-const endpoint = import.meta.env.VITE_EXECUTION_API_URL as string | undefined
+const endpoint = import.meta.env.VITE_EXECUTION_API_URL || '/api/run'
 
 export async function executeCode(request: RunRequest): Promise<RunResult> {
-  if (!endpoint) {
-    return {
-      stdout: '',
-      stderr: 'Execution backend is not configured. Set VITE_EXECUTION_API_URL to connect a runner.',
-      status: 'unavailable',
-    }
-  }
-
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
+    body: JSON.stringify({ language: request.language, code: request.source }),
   })
   const data = await response.json().catch(() => ({}))
   if (!response.ok) {
@@ -37,7 +27,7 @@ export async function executeCode(request: RunRequest): Promise<RunResult> {
   return {
     stdout: data.stdout ?? data.output ?? '',
     stderr: data.stderr ?? data.error ?? '',
-    status: data.status === 'error' || data.stderr ? 'error' : 'success',
+    status: data.success === false || data.status === 'error' ? 'error' : 'success',
     durationMs: data.durationMs ?? data.duration_ms,
   }
 }

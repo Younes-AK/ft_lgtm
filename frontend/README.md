@@ -9,13 +9,11 @@ npm install
 npm run dev
 ```
 
-## Execution service
+## Run Python and Rust
 
-The current backend does not include a code execution route. To enable Run, set
-`VITE_EXECUTION_API_URL` to a trusted runner endpoint. The frontend sends a JSON
-POST request with `language` (`javascript`, `python`, `cpp`, or `rust`), `source`,
-`input`, and `filename`. It expects a JSON response containing `stdout`, `stderr`,
-optional `durationMs` (or `duration_ms`), and optional `status`. The UI reports the
-runner as unavailable when the endpoint is unset; it never evaluates code locally.
+Start the FastAPI service on `http://localhost:8000` and the frontend with
+`npm run dev`. Vite proxies `/api/run` to the backend's `/run` endpoint. The
+frontend sends `{ language, code }` and displays the returned stdout or stderr.
 
-Copy `.env.example` to `.env.local` and set the endpoint to configure a runner.
+Set `VITE_EXECUTION_API_URL` in `.env.local` only when the backend is hosted at a
+different URL.
